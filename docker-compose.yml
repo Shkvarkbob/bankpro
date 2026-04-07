@@ -1,0 +1,91 @@
+version: '3.8'
+services:
+  account-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: accountdb
+      POSTGRES_USER: account_user
+      POSTGRES_PASSWORD: secret
+    ports: ["5433:5432"]
+    networks: [bankpro-net]
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U account_user -d accountdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  payment-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: paymentdb
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: secret
+    ports: ["5434:5432"]
+    networks: [bankpro-net]
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U payment_user -d paymentdb" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  discovery-service:
+    build:
+      context: .
+      dockerfile: ./discovery-service/Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - bankpro-net
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery-service
+    networks:
+      - bankpro-net
+
+  account-service:
+    build:
+      context: .
+      dockerfile: ./account-service/Dockerfile
+    depends_on:
+      account-db:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    networks:
+      - bankpro-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://account-db:5432/accountdb
+      SPRING_DATASOURCE_USERNAME: account_user
+      SPRING_DATASOURCE_PASSWORD: secret
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: ./payment-service/Dockerfile
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    ports:
+      - "8082:8082"
+    networks:
+      - bankpro-net
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://payment-db:5432/paymentdb
+      SPRING_DATASOURCE_USERNAME: payment_user
+      SPRING_DATASOURCE_PASSWORD: secret
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+
+networks:
+  bankpro-net:
+    driver: bridge
