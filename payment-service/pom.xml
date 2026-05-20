@@ -37,11 +37,7 @@
         <dependency>
             <groupId>com.bankpro</groupId>
             <artifactId>common-dto</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>io.projectreactor.addons</groupId>
-            <artifactId>reactor-extra</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <build>

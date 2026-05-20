@@ -3,13 +3,12 @@ package com.bankpro.payment.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class WebClientConfig {
 
-    @Value("{account.service.url:http://account-service:8081}")
+    @Value("${account.service.url:http://account-service:8081}")
     private String accountServiceUrl;
 
     @Bean

@@ -9,5 +9,5 @@ public record TransferRequest (
         @NotNull
         @DecimalMin("0.01")
         BigDecimal amount,
-        String idempotencyKey
+        @NotBlank String idempotencyKey
 ) {}
