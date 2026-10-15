@@ -7,7 +7,9 @@ import com.bankpro.payment.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 @Service
 public class PaymentPersistenceService {
@@ -28,31 +30,31 @@ public class PaymentPersistenceService {
                     p.setAmount(request.amount());
                     p.setIdempotencyKey(request.idempotencyKey());
                     p.setStatus(PaymentStatus.CREATED);
-                    p.setCreatedAt(OffsetDateTime.now());
                     return paymentRepository.save(p);
                 });
     }
 
+    @Transactional(readOnly = true)
     public Payment findByIdempotencyKey(String idempotencyKey) {
         return paymentRepository.findByIdempotencyKey(idempotencyKey)
                 .orElseThrow(() -> new IllegalStateException("Payment not found: " + idempotencyKey));
     }
 
+    /**
+     * Moves the payment from {@code expected} to {@code target} if it still has that status and has not
+     * been touched during the last {@code minAge}. Returns empty if somebody else got there first.
+     */
     @Transactional
-    public Payment markProcessing(Payment payment) {
-        payment.setStatus(PaymentStatus.PROCESSING);
-        return paymentRepository.save(payment);
+    public Optional<Payment> claim(Long id, PaymentStatus expected, PaymentStatus target, Duration minAge) {
+        OffsetDateTime now = OffsetDateTime.now();
+        int rows = paymentRepository.claim(id, expected, target, now, now.minus(minAge));
+        return rows == 0 ? Optional.empty() : paymentRepository.findById(id);
     }
 
     @Transactional
-    public Payment markCompleted(Payment payment) {
-        payment.setStatus(PaymentStatus.COMPLETED);
-        return paymentRepository.save(payment);
-    }
-
-    @Transactional
-    public Payment markFailed(Payment payment) {
-        payment.setStatus(PaymentStatus.FAILED);
-        return paymentRepository.save(payment);
+    public Payment updateStatus(Long id, PaymentStatus status) {
+        paymentRepository.updateStatus(id, status, OffsetDateTime.now());
+        return paymentRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Payment not found: " + id));
     }
 }

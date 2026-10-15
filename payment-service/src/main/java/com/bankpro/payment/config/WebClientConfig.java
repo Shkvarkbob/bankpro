@@ -8,11 +8,16 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${account.service.url:http://account-service:8081}")
+    @Value("${account.service.url}")
     private String accountServiceUrl;
+
+    @Value("${internal.token}")
+    private String internalToken;
 
     @Bean
     public WebClient accountWebClient(WebClient.Builder builder) {
-        return builder.baseUrl(accountServiceUrl).build();
+        return builder.baseUrl(accountServiceUrl)
+                .defaultHeader("X-Internal-Token", internalToken)
+                .build();
     }
 }

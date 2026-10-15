@@ -1,11 +1,10 @@
-version: '3.8'
 services:
   account-db:
     image: postgres:15
     environment:
       POSTGRES_DB: accountdb
       POSTGRES_USER: account_user
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD: ${ACCOUNT_DB_PASSWORD:-secret}
     ports: ["5433:5432"]
     networks: [bankpro-net]
     healthcheck:
@@ -19,7 +18,7 @@ services:
     environment:
       POSTGRES_DB: paymentdb
       POSTGRES_USER: payment_user
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD:-secret}
     ports: ["5434:5432"]
     networks: [bankpro-net]
     healthcheck:
@@ -37,6 +36,7 @@ services:
     networks:
       - bankpro-net
 
+  # The only service reachable from outside the compose network (besides Eureka UI and the DBs for local dev).
   api-gateway:
     build:
       context: .
@@ -47,7 +47,12 @@ services:
       - discovery-service
     networks:
       - bankpro-net
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-dev-api-key}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
 
+  # Internal only: no published ports, reachable by other containers (and only with INTERNAL_TOKEN).
   account-service:
     build:
       context: .
@@ -57,15 +62,16 @@ services:
         condition: service_healthy
       discovery-service:
         condition: service_started
-    ports:
-      - "8081:8081"
+    expose:
+      - "8081"
     networks:
       - bankpro-net
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://account-db:5432/accountdb
       SPRING_DATASOURCE_USERNAME: account_user
-      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_DATASOURCE_PASSWORD: ${ACCOUNT_DB_PASSWORD:-secret}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
 
   payment-service:
     build:
@@ -76,15 +82,17 @@ services:
         condition: service_healthy
       discovery-service:
         condition: service_started
-    ports:
-      - "8082:8082"
+    expose:
+      - "8082"
     networks:
       - bankpro-net
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://payment-db:5432/paymentdb
       SPRING_DATASOURCE_USERNAME: payment_user
-      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_DATASOURCE_PASSWORD: ${PAYMENT_DB_PASSWORD:-secret}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      ACCOUNT_SERVICE_URL: http://account-service:8081
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
 
 networks:
   bankpro-net:
