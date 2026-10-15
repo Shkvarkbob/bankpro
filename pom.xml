@@ -29,6 +29,8 @@
                     <configuration>
                         <!-- JDK 23+ no longer runs annotation processors (Lombok) found on the classpath by default -->
                         <proc>full</proc>
+                        <!-- Spring resolves @PathVariable/@RequestParam names from parameter names -->
+                        <parameters>true</parameters>
                     </configuration>
                 </plugin>
             </plugins>
