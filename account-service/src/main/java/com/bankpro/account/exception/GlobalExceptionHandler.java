@@ -1,6 +1,8 @@
 package com.bankpro.account.exception;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -20,10 +22,23 @@ public class GlobalExceptionHandler {
         return Map.of("error", ex.getMessage());
     }
 
-    @ExceptionHandler(IllegalStateException.class)
+    @ExceptionHandler(InsufficientFundsException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
-    public Map<String, String> handleInsufficientFunds(IllegalStateException ex) {
+    public Map<String, String> handleInsufficientFunds(InsufficientFundsException ex) {
         return Map.of("error", ex.getMessage());
+    }
+
+    @ExceptionHandler(AccountAlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleAlreadyExists(AccountAlreadyExistsException ex) {
+        return Map.of("error", ex.getMessage());
+    }
+
+    /** Lock failures and lost races on unique keys: the caller may safely retry. */
+    @ExceptionHandler({ConcurrencyFailureException.class, DataIntegrityViolationException.class})
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleConflict(Exception ex) {
+        return Map.of("error", "Concurrent modification, retry the request");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -16,9 +16,24 @@
     </modules>
     <properties>
         <java.version>24</java.version>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
         <spring-boot.version>3.5.5</spring-boot.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
     </properties>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <!-- JDK 23+ no longer runs annotation processors (Lombok) found on the classpath by default -->
+                        <proc>full</proc>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
     <dependencyManagement>
         <dependencies>
             <dependency>

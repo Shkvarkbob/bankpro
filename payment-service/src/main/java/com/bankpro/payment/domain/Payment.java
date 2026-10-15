@@ -34,4 +34,7 @@ public class Payment {
 
     @Column(nullable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    @Column(nullable = false)
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 }
