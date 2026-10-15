@@ -4,8 +4,8 @@ services:
     environment:
       POSTGRES_DB: accountdb
       POSTGRES_USER: account_user
-      POSTGRES_PASSWORD: ${ACCOUNT_DB_PASSWORD:-secret}
-    ports: ["5433:5432"]
+      POSTGRES_PASSWORD: ${ACCOUNT_DB_PASSWORD:?set ACCOUNT_DB_PASSWORD in .env}
+    ports: ["127.0.0.1:5433:5432"]
     networks: [bankpro-net]
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U account_user -d accountdb" ]
@@ -18,8 +18,8 @@ services:
     environment:
       POSTGRES_DB: paymentdb
       POSTGRES_USER: payment_user
-      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD:-secret}
-    ports: ["5434:5432"]
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD:?set PAYMENT_DB_PASSWORD in .env}
+    ports: ["127.0.0.1:5434:5432"]
     networks: [bankpro-net]
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U payment_user -d paymentdb" ]
@@ -32,7 +32,7 @@ services:
       context: .
       dockerfile: ./discovery-service/Dockerfile
     ports:
-      - "8761:8761"
+      - "127.0.0.1:8761:8761"
     networks:
       - bankpro-net
 
@@ -49,8 +49,8 @@ services:
       - bankpro-net
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
-      GATEWAY_API_KEY: ${GATEWAY_API_KEY:-dev-api-key}
-      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      GATEWAY_API_KEY: ${GATEWAY_API_KEY:?set GATEWAY_API_KEY in .env}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN in .env}
 
   # Internal only: no published ports, reachable by other containers (and only with INTERNAL_TOKEN).
   account-service:
@@ -69,9 +69,9 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://account-db:5432/accountdb
       SPRING_DATASOURCE_USERNAME: account_user
-      SPRING_DATASOURCE_PASSWORD: ${ACCOUNT_DB_PASSWORD:-secret}
+      SPRING_DATASOURCE_PASSWORD: ${ACCOUNT_DB_PASSWORD:?set ACCOUNT_DB_PASSWORD in .env}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
-      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN in .env}
 
   payment-service:
     build:
@@ -89,10 +89,10 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://payment-db:5432/paymentdb
       SPRING_DATASOURCE_USERNAME: payment_user
-      SPRING_DATASOURCE_PASSWORD: ${PAYMENT_DB_PASSWORD:-secret}
+      SPRING_DATASOURCE_PASSWORD: ${PAYMENT_DB_PASSWORD:?set PAYMENT_DB_PASSWORD in .env}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
       ACCOUNT_SERVICE_URL: http://account-service:8081
-      INTERNAL_TOKEN: ${INTERNAL_TOKEN:-dev-internal-token}
+      INTERNAL_TOKEN: ${INTERNAL_TOKEN:?set INTERNAL_TOKEN in .env}
 
 networks:
   bankpro-net:
